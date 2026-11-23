@@ -37,11 +37,13 @@ ballots, remove/clear, and a composite-only poster graphic (1600×900 PNG) for X
 - Blob store: `big-east-rankings-ballots`, private access.
 - `meta.json` — `{ open: true, excluded: ["handle", ...] }` (poll open/closed + include/exclude flags).
 - `submissions/<handle>.json` — one JSON per submission: `{ handle, order: [11 team ids], updatedAt }`.
-- Connected Blob stores authenticate via OIDC — Vercel does **not** set a
-  `BLOB_READ_WRITE_TOKEN` for them, and the code must not require one. Do not
-  add that variable manually; if the store is connected, the SDK authenticates
-  on its own. (A `BLOB_READ_WRITE_TOKEN` is only needed for local development
-  outside Vercel.)
+- Connected Blob stores authenticate via OIDC, but OIDC tokens only allow
+  public access — private writes (`access: "private"`) fail with
+  `access must be "public"`. So `BLOB_READ_WRITE_TOKEN` **must** be set
+  (Production) from the store's Quickstart → `.env.local` tab; the code
+  passes it explicitly to every SDK call so it wins over OIDC. Without
+  it, reads work but every write (submits, open/close, remove, clear)
+  fails. Redeploy after adding it.
 - The admin password is **never** in the repo. It comes from the `ADMIN_PASSWORD`
   environment variable, checked server-side on every admin/composite request.
   If it is not set, admin endpoints return 503.
@@ -82,10 +84,14 @@ ballots, remove/clear, and a composite-only poster graphic (1600×900 PNG) for X
 3. **Database — Blob store**
    - In the Vercel dashboard, go to **Storage → Create Store → Blob**.
    - Name: `big-east-rankings-ballots`, private access.
-   - Connect it to the `big-east-rankings` project. Connected stores
-     authenticate via OIDC — no token variable is needed or set.
+   - Connect it to the `big-east-rankings` project. Then set the token:
+     on the store page, Quickstart → `.env.local` tab, copy the
+     `BLOB_READ_WRITE_TOKEN` value and add it as a project env var
+     (Production). OIDC alone only allows public access, so private
+     writes fail without this token. Redeploy after adding it.
    - If voting fails afterwards, make sure the store shows as Connected in
-     **Project → Settings → Storage**, then redeploy.
+     **Project → Settings → Storage** and `BLOB_READ_WRITE_TOKEN` is set
+     for Production, then redeploy.
 
 4. **Admin password**
    - **Project → Settings → Environment Variables**, add `ADMIN_PASSWORD`

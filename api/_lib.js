@@ -6,12 +6,14 @@
 //   meta.json                  { open: true, excluded: ["handle", ...] }
 //   submissions/<handle>.json  { handle, order: [teamId x11], updatedAt }
 // No secrets are ever stored in the repo. ADMIN_PASSWORD is the only
-// required environment variable. Blob auth: connected Vercel Blob stores
-// now authenticate via OIDC — Vercel does NOT add a
-// BLOB_READ_WRITE_TOKEN env var for a connected store, so the code must
-// not require one. The @vercel/blob SDK authenticates automatically
-// inside a Vercel function: via BLOB_READ_WRITE_TOKEN when it is set,
-// and via OIDC otherwise.
+// required environment variable. Blob auth: when BLOB_STORE_ID is set
+// (Vercel sets it for a connected store) the @vercel/blob SDK prefers
+// OIDC, and OIDC tokens only allow access: "public" — so a private
+// put() throws `access must be "public"` even when BLOB_READ_WRITE_TOKEN
+// is also set. realBlobImpl() therefore passes the read-write token
+// EXPLICITLY (via the `token` option) to every SDK call, so the token
+// wins over OIDC and private writes work. When no token is set it falls
+// back to the SDK default (OIDC), so reads keep working.
 'use strict';
 
 const fs = require('fs');
@@ -121,13 +123,19 @@ function setBlobImpl(impl) { blobImpl = impl; }
 function realBlobImpl() {
   // Lazy require so unit tests never need @vercel/blob installed.
   const blob = require('@vercel/blob');
+  // Pass the read-write token EXPLICITLY to every SDK call. The SDK
+  // prefers OIDC when BLOB_STORE_ID is set, and OIDC tokens only allow
+  // access: "public" — without the explicit token, a private put()
+  // throws `Vercel Blob: access must be "public"` even though the token
+  // env var is set. Undefined when unset, so the SDK falls back to OIDC.
+  const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
   return {
     async put(p, text) {
-      await blob.put(p, text, { access: 'private', addRandomSuffix: false });
+      await blob.put(p, text, { access: 'private', addRandomSuffix: false, token });
     },
     async get(p) {
       try {
-        const head = await blob.head(p);
+        const head = await blob.head(p, { token });
         const url = head.downloadUrl || head.url;
         const res = await fetch(url);
         if (!res.ok) return null;
@@ -140,7 +148,7 @@ function realBlobImpl() {
       const out = [];
       let cursor;
       do {
-        const page = await blob.list({ prefix, cursor });
+        const page = await blob.list({ prefix, cursor, token });
         for (const b of page.blobs) out.push(b.pathname);
         cursor = page.cursor;
       } while (cursor);
@@ -148,8 +156,8 @@ function realBlobImpl() {
     },
     async del(p) {
       try {
-        const head = await blob.head(p);
-        await blob.del(head.url);
+        const head = await blob.head(p, { token });
+        await blob.del(head.url, { token });
       } catch (e) { /* already gone */ }
     },
   };
@@ -157,11 +165,9 @@ function realBlobImpl() {
 
 function store() {
   if (blobImpl) return blobImpl;
-  // No BLOB_READ_WRITE_TOKEN check here on purpose: connected Blob stores
-  // authenticate via OIDC, and Vercel does not set that env var for them.
-  // The @vercel/blob SDK authenticates automatically (env token when
-  // present, OIDC otherwise); if auth actually fails the SDK call throws
-  // and the API handler turns it into a 500.
+  // No BLOB_READ_WRITE_TOKEN check here on purpose: a missing token is
+  // not fatal — realBlobImpl() passes it explicitly when set and falls
+  // back to the SDK default (OIDC) when unset, so reads keep working.
   blobImpl = realBlobImpl();
   return blobImpl;
 }
