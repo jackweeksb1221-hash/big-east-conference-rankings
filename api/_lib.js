@@ -8,12 +8,13 @@
 // No secrets are ever stored in the repo. ADMIN_PASSWORD is the only
 // required environment variable. Blob auth: when BLOB_STORE_ID is set
 // (Vercel sets it for a connected store) the @vercel/blob SDK prefers
-// OIDC, and OIDC tokens only allow access: "public" — so a private
-// put() throws `access must be "public"` even when BLOB_READ_WRITE_TOKEN
-// is also set. realBlobImpl() therefore passes the read-write token
-// EXPLICITLY (via the `token` option) to every SDK call, so the token
-// wins over OIDC and private writes work. When no token is set it falls
-// back to the SDK default (OIDC), so reads keep working.
+// OIDC, so realBlobImpl() passes BLOB_READ_WRITE_TOKEN EXPLICITLY (via
+// the `token` option) to every SDK call. And put() must use
+// access: 'public' — every @vercel/blob version (0.x and 1.x) throws
+// `access must be "public"` for 'private' before any network call;
+// the real privacy comes from the STORE (big-east-rankings-ballots is
+// private), so blobs stay private. When no token is set the SDK falls
+// back to its default (OIDC), so reads keep working.
 'use strict';
 
 const fs = require('fs');
@@ -124,14 +125,17 @@ function realBlobImpl() {
   // Lazy require so unit tests never need @vercel/blob installed.
   const blob = require('@vercel/blob');
   // Pass the read-write token EXPLICITLY to every SDK call. The SDK
-  // prefers OIDC when BLOB_STORE_ID is set, and OIDC tokens only allow
-  // access: "public" — without the explicit token, a private put()
-  // throws `Vercel Blob: access must be "public"` even though the token
-  // env var is set. Undefined when unset, so the SDK falls back to OIDC.
+  // prefers OIDC when BLOB_STORE_ID is set; the explicit token wins.
+  // NOTE: @vercel/blob's put() requires access: 'public' — the option is
+  // a client-side validation, and the real privacy comes from the STORE
+  // (big-east-rankings-ballots is private), so blobs stay private.
+  // access: 'private' throws `Vercel Blob: access must be "public"`
+  // before any network call, in every SDK version. Undefined when unset,
+  // so the SDK falls back to OIDC.
   const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
   return {
     async put(p, text) {
-      await blob.put(p, text, { access: 'private', addRandomSuffix: false, token });
+      await blob.put(p, text, { access: 'public', addRandomSuffix: false, token });
     },
     async get(p) {
       try {
