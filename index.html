@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Big East Power Rankings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Graduate&family=Archivo+Black&family=Archivo:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--blue:#0072BC;--red:#E31837;--navy:#061a33;--navy2:#0a2a4d;--gold:#d4af37;--ink:#0b1c2c;--muted:#5b6b7a;--line:#dbe4ec;--bg:#eef3f7}
+*{box-sizing:border-box}
+body{margin:0;font-family:Archivo,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+header{background:linear-gradient(135deg,#005a94,#0072BC 55%,#0a5ea8);color:#fff;padding:18px 16px 14px}
+.wordmark{display:flex;gap:12px;align-items:center}
+.wordmark .be-badge{background:#fff;color:var(--blue);border-radius:10px;padding:6px 10px;line-height:1;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.wordmark .be-badge b{display:block;font-family:Graduate,serif;font-size:22px;letter-spacing:.5px}
+.wordmark .be-badge span{font-size:8px;letter-spacing:2.5px;font-weight:800;color:var(--red)}
+.wordmark h1{font-family:Graduate,serif;font-size:24px;letter-spacing:2px;margin:0}
+.wordmark p{margin:2px 0 0;font-size:13px;opacity:.9}
+nav{display:flex;gap:10px;padding:12px 16px 0}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:999px;padding:12px 18px;font-weight:800;font-size:15px;
+  background:#fff;color:var(--blue);box-shadow:0 3px 0 rgba(0,0,0,.18);transition:transform .06s ease,box-shadow .06s ease,filter .12s}
+button:hover{filter:brightness(1.06)}
+button:active{transform:translateY(2px) scale(.98);box-shadow:0 1px 0 rgba(0,0,0,.18) inset}
+button.primary{background:var(--blue);color:#fff}
+button.danger{background:var(--red);color:#fff}
+button.ghost{background:#e8eef3;color:var(--ink)}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.tabbtn{background:rgba(255,255,255,.22);color:#fff}
+.tabbtn.active{background:#fff;color:var(--blue)}
+main{max-width:720px;margin:0 auto;padding:14px 14px 60px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:17px;margin:0 0 8px}
+p.help{color:var(--muted);font-size:13.5px;line-height:1.45;margin:6px 0}
+input[type=text],input[type=password]{width:100%;padding:12px;border:2px solid var(--line);border-radius:10px;font-size:16px;font-family:inherit}
+input:focus{outline:2px solid var(--blue);border-color:var(--blue)}
+.submit-top{width:100%;font-size:17px;padding:15px;margin:10px 0 4px}
+.banner{border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px;margin:8px 0}
+.banner.closed{background:#fde8ea;color:#8f1226;border:1px solid #f3b3bb}
+.banner.final{background:#e6f4ea;color:#14532d;border:1px solid #a7d7b5}
+.banner.err{background:#fde8ea;color:#8f1226}
+.banner.ok{background:#e6f4ea;color:#14532d}
+.teamrow{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px;touch-action:none;user-select:none;-webkit-user-select:none}
+.teamrow.locked{opacity:.75}
+.teamrow.dragging{box-shadow:0 10px 24px rgba(0,0,0,.28);border-color:var(--blue);z-index:5;position:relative}
+.grip{flex:0 0 auto;width:34px;height:100%;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#9db0bf;cursor:grab;touch-action:none;border-radius:8px;background:#f2f6f9}
+.grip:active{cursor:grabbing;background:#dbe9f3}
+.ranknum{flex:0 0 22px;text-align:center;font-family:"Archivo Black",sans-serif;font-size:18px;color:var(--blue)}
+.logo{flex:0 0 46px;width:46px;height:46px;border-radius:50%;background:#fff;border:2px solid #e6edf2;display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:800;color:var(--blue)}
+.logo img{width:42px;height:42px;object-fit:contain}
+.tname{flex:1;min-width:0}
+.tname b{display:block;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tname span{font-size:12.5px;color:var(--muted)}
+.rec{flex:0 0 auto;background:#0b1c2c;color:#fff;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:800}
+.mv{display:flex;flex-direction:column;gap:4px}
+.mv button{padding:6px 9px;font-size:13px;box-shadow:0 2px 0 rgba(0,0,0,.15)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
+.admin-sec{border-top:2px solid var(--line);padding-top:12px;margin-top:16px}
+.poster-wrap{overflow:hidden;border-radius:12px}
+.poster{background:linear-gradient(160deg,#04101f 0%,#0a2a4d 45%,#061a33 100%);color:#fff;padding:14px;border:3px solid var(--gold);outline:1px solid #8a6d1f;outline-offset:-7px}
+.poster .ph{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;border-bottom:1px solid rgba(212,175,55,.6);padding-bottom:10px;margin-bottom:10px}
+.poster .ph .ttl{font-family:Graduate,serif;font-size:19px;letter-spacing:1.5px;line-height:1.15}
+.poster .ph .ttl small{display:block;font-size:10px;letter-spacing:3px;color:var(--gold)}
+.pill{background:linear-gradient(180deg,#f04452,#c2102b);border:1px solid var(--gold);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:800;letter-spacing:1px;white-space:nowrap}
+.poster .cols{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prow{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:9px;padding:5px 7px;min-width:0}
+.prow.first{background:linear-gradient(90deg,rgba(212,175,55,.35),rgba(212,175,55,.08));border-color:var(--gold)}
+.prow .pr{flex:0 0 16px;font-weight:800;color:#9fc6e8;font-size:14px;text-align:center}
+.prow.first .pr{color:var(--gold)}
+.prow .plogo{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:10px;font-weight:800;color:var(--blue)}
+.prow .plogo img{width:27px;height:27px;object-fit:contain}
+.prow .pname{flex:1;min-width:0;display:flex;align-items:baseline;gap:4px}
+.prow .pname .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:800;font-size:13.5px}
+.prow .pname .fp{flex:0 0 auto;color:var(--gold);font-weight:800;font-size:13px}
+.prow .ppts{flex:0 0 auto;color:var(--gold);font-weight:800;font-size:12px;text-align:right}
+.prow .ppts small{display:block;color:#fff;font-weight:700;font-size:10px}
+.poster .pf{margin-top:10px;text-align:center;font-size:11px;color:#c8d6e2;border-top:1px solid rgba(212,175,55,.6);padding-top:8px}
+@media (max-width:480px){.poster .cols{grid-template-columns:1fr 1fr}.wordmark h1{font-size:20px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wordmark">
+    <div class="be-badge"><span>THE</span><b>BIG EAST</b><span>CONFERENCE</span></div>
+    <div><h1>BIG EAST POWER RANKINGS</h1><p>Rank all 11 &middot; 2026-27 season</p></div>
+  </div>
+  <nav>
+    <button class="tabbtn active" id="tabRankBtn" onclick="showTab('rank')">Rank &amp; Submit</button>
+    <button class="tabbtn" id="tabAdminBtn" onclick="showTab('admin')">Poll Admin</button>
+  </nav>
+</header>
+<main>
+  <!-- ============ RANK TAB ============ -->
+  <section id="tab-rank">
+    <div class="card">
+      <h2>Your X handle</h2>
+      <p class="help">Your handle locks your ranking. One submission per handle — once you submit, it is final and cannot be changed.</p>
+      <input type="text" id="handle" placeholder="@yourhandle" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div id="handleMsg"></div>
+    </div>
+    <div id="pollBanner"></div>
+    <button class="primary submit-top" id="submitTop" onclick="submitRanking()">Submit my ranking</button>
+    <p class="help" style="text-align:center">Drag teams by the grip, or use the up / down buttons. 1st place is worth 11 points, 11th is worth 1.</p>
+    <div id="teamList"></div>
+    <button class="primary submit-top" id="submitBottom" onclick="submitRanking()">Submit my ranking</button>
+    <div style="text-align:center"><button class="ghost" id="resetBtn" onclick="resetOrder()">Reset order</button></div>
+  </section>
+
+  <!-- ============ ADMIN TAB ============ -->
+  <section id="tab-admin" style="display:none">
+    <div class="card" id="adminLock">
+      <h2>Poll Admin — locked</h2>
+      <p class="help">Enter the admin password to open the poll tools. The password is set in the Vercel environment (ADMIN_PASSWORD) and is never stored in this app.</p>
+      <input type="password" id="adminPw" placeholder="Admin password" autocomplete="current-password">
+      <div style="height:10px"></div>
+      <button class="primary" onclick="unlockAdmin()" style="width:100%">Unlock Poll Admin</button>
+      <div id="adminErr"></div>
+    </div>
+    <div id="adminBody" style="display:none">
+      <div class="card">
+        <h2>Poll status</h2>
+        <p class="help" id="pollStateText"></p>
+        <button class="primary" id="openCloseBtn" onclick="toggleOpen()"></button>
+        <button class="ghost" onclick="lockAdmin()">Lock admin</button>
+      </div>
+      <div class="card">
+        <h2>Submissions — include / exclude</h2>
+        <p class="help">Checked accounts count toward the composite. Uncheck an account to leave it out. New submissions count by default.</p>
+        <div id="checklist"></div>
+      </div>
+      <div class="card">
+        <h2>Composite ranking</h2>
+        <p class="help">AP-style points from checked-in accounts only: 11 pts for 1st, 10 for 2nd, down to 1 for 11th. Ties broken by first-place votes.</p>
+        <div id="compositeList"></div>
+      </div>
+      <div class="card">
+        <h2>Remove / clear</h2>
+        <p class="help">Removing a submission deletes that ballot and frees its handle to submit again. Clearing wipes every ballot. Teams, records and the open/closed state are untouched.</p>
+        <button class="danger" onclick="clearAll()" style="width:100%">Clear all rankings</button>
+      </div>
+      <div class="card admin-sec">
+        <h2>Graphic — composite poster</h2>
+        <p class="help">Composite only, for posting on X. Points: 11 for a 1st-place vote, 10 for 2nd, down to 1 for 11th. (N) after a team = times it was picked 1st. One sheet, sized for Twitter/X (1600 &times; 900).</p>
+        <div class="poster-wrap"><div class="poster" id="posterPreview"></div></div>
+        <div style="height:10px"></div>
+        <button class="primary" onclick="downloadPoster()" style="width:100%">Download PNG</button>
+        <p class="help">The poster shows the composite poll from the ballots checked in on the Poll Admin tab.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+let TEAMS = [];
+let order = [];          // array of team ids, current display order
+let locked = false;      // true once this handle has submitted (final)
+let pollOpen = true;
+let submittedHandle = null;
+let adminPw = null;
+let adminData = null;    // {open, submissions, composite, ballotCount}
+let logoCache = {};      // teamId -> HTMLImageElement | 'fail'
+
+const $ = (id) => document.getElementById(id);
+const byId = (id) => TEAMS.find((t) => t.id === id);
+const record = (t) => t.wins + '-' + t.losses;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function logoHtml(t, cls) {
+  return '<span class="' + cls + '" data-team="' + t.id + '">' +
+    '<img src="' + t.logo + '" alt="" onerror="this.parentNode.textContent=\'' + t.initials + '\'">' +
+    '</span>';
+}
+
+async function loadTeams() {
+  const res = await fetch('teams.json');
+  const data = await res.json();
+  TEAMS = data.teams;
+  order = TEAMS.map((t) => t.id); // default: by record, as in teams.json
+  renderList();
+  refreshPollState();
+}
+
+async function refreshPollState() {
+  try {
+    const res = await fetch('/api/submit');
+    const d = await res.json();
+    pollOpen = d.open !== false;
+    renderBanner();
+  } catch (e) { /* offline / local preview: assume open */ }
+}
+
+function renderBanner() {
+  const el = $('pollBanner');
+  if (!pollOpen) {
+    el.innerHTML = '<div class="banner closed">The poll is closed right now. Submissions are not being accepted.</div>';
+  } else if (locked) {
+    el.innerHTML = '<div class="banner final">Ranking locked in — that\'s final. This handle has already submitted.</div>';
+  } else {
+    el.innerHTML = '';
+  }
+  const dis = locked || !pollOpen;
+  $('submitTop').disabled = dis;
+  $('submitBottom').disabled = dis;
+  $('submitTop').textContent = locked ? 'Submitted — final' : 'Submit my ranking';
+  $('submitBottom').textContent = locked ? 'Submitted — final' : 'Submit my ranking';
+  $('resetBtn').disabled = dis;
+}
+
+function renderList() {
+  const list = $('teamList');
+  list.innerHTML = order.map((id, i) => {
+    const t = byId(id);
+    return '<div class="teamrow' + (locked ? ' locked' : '') + '" data-id="' + t.id + '">' +
+      '<span class="grip" data-grip="' + t.id + '" title="Drag to reorder">&#9776;</span>' +
+      '<span class="ranknum">' + (i + 1) + '</span>' +
+      logoHtml(t, 'logo') +
+      '<span class="tname"><b>' + esc(t.name) + '</b><span>' + esc(t.nickname) + ' &middot; ' + record(t) + '</span></span>' +
+      '<span class="rec">' + record(t) + '</span>' +
+      '<span class="mv"><button onclick="moveTeam(\'' + t.id + '\',-1)" ' + (locked || i === 0 ? 'disabled' : '') + '>&#9650;</button>' +
+      '<button onclick="moveTeam(\'' + t.id + '\',1)" ' + (locked || i === order.length - 1 ? 'disabled' : '') + '>&#9660;</button></span>' +
+      '</div>';
+  }).join('');
+  attachDrag();
+  renderBanner();
+}
+
+function moveTeam(id, dir) {
+  if (locked) return;
+  const i = order.indexOf(id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= order.length) return;
+  order[i] = order[j]; order[j] = id;
+  renderList();
+}
+
+function resetOrder() {
+  if (locked) return;
+  order = TEAMS.map((t) => t.id);
+  renderList();
+}
+
+// --- Pointer drag: card follows the finger, siblings slide, order commits on release.
+// Listeners live on window (not on the row), so re-rendering mid-drag cannot
+// drop the gesture — that was the original drag bug.
+let drag = null;
+function attachDrag() {
+  document.querySelectorAll('[data-grip]').forEach((grip) => {
+    grip.addEventListener('pointerdown', (e) => {
+      if (locked) return;
+      e.preventDefault();
+      const id = grip.getAttribute('data-grip');
+      const row = grip.closest('.teamrow');
+      drag = { id, startY: e.clientY, lastY: e.clientY, rowH: row.offsetHeight };
+      row.classList.add('dragging');
+      window.addEventListener('pointermove', onDragMove, { passive: false });
+      window.addEventListener('pointerup', onDragEnd, { once: true });
+      window.addEventListener('pointercancel', onDragEnd, { once: true });
+    });
+  });
+}
+function onDragMove(e) {
+  if (!drag) return;
+  e.preventDefault();
+  drag.lastY = e.clientY;
+  const dy = e.clientY - drag.startY;
+  const rowEl = document.querySelector('.teamrow[data-id="' + drag.id + '"]');
+  if (rowEl) rowEl.style.transform = 'translateY(' + dy + 'px)';
+  // Work out the target slot from the pointer position over the list.
+  const list = $('teamList');
+  const rows = [...list.querySelectorAll('.teamrow')].filter((r) => r.getAttribute('data-id') !== drag.id);
+  let target = order.indexOf(drag.id);
+  const rect = list.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+  let acc = 0;
+  for (let k = 0; k < rows.length; k++) {
+    acc += rows[k].offsetHeight + 8;
+    if (y < acc - rows[k].offsetHeight / 2) { target = k; break; }
+    target = k + 1;
+  }
+  const cur = order.indexOf(drag.id);
+  if (target !== cur && target >= 0 && target < order.length) {
+    order.splice(cur, 1);
+    order.splice(target, 0, drag.id);
+    renderList();
+    const el = document.querySelector('.teamrow[data-id="' + drag.id + '"]');
+    if (el) { el.classList.add('dragging'); el.style.transform = 'translateY(' + dy + 'px)'; }
+  }
+}
+function onDragEnd() {
+  window.removeEventListener('pointermove', onDragMove);
+  drag = null;
+  renderList();
+}
+
+// --- Handle / submit ---
+async function checkHandle() {
+  const raw = $('handle').value.trim();
+  if (!raw) { $('handleMsg').innerHTML = ''; return; }
+  try {
+    const res = await fetch('/api/submit?handle=' + encodeURIComponent(raw));
+    const d = await res.json();
+    pollOpen = d.open !== false;
+    if (d.submitted && d.submission) {
+      locked = true;
+      submittedHandle = d.submission.handle;
+      order = d.submission.order.slice();
+      $('handleMsg').innerHTML = '<div class="banner final">This handle already submitted — showing its final ranking (view only).</div>';
+      renderList();
+    } else {
+      locked = false;
+      $('handleMsg').innerHTML = '';
+      renderList();
+    }
+  } catch (e) { /* local preview */ }
+}
+$('handle').addEventListener('change', checkHandle);
+
+async function submitRanking() {
+  if (locked) return;
+  const handle = $('handle').value.trim();
+  if (!handle) { $('handleMsg').innerHTML = '<div class="banner err">Enter your X handle first.</div>'; $('handle').focus(); return; }
+  if (!pollOpen) { $('handleMsg').innerHTML = '<div class="banner closed">The poll is closed right now.</div>'; return; }
+  const btns = [$('submitTop'), $('submitBottom')];
+  btns.forEach((b) => b.disabled = true);
+  try {
+    const res = await fetch('/api/submit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle, order }),
+    });
+    const d = await res.json();
+    if (!res.ok) {
+      $('handleMsg').innerHTML = '<div class="banner err">' + esc(d.error || 'Could not submit.') + '</div>';
+      if (res.status === 409) { locked = true; renderList(); }
+      return;
+    }
+    locked = true;
+    submittedHandle = d.handle;
+    $('handleMsg').innerHTML = '<div class="banner ok">Ranking locked in — that\'s final. Thanks for voting, @' + esc(d.handle) + '.</div>';
+    renderList();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) {
+    $('handleMsg').innerHTML = '<div class="banner err">Could not reach the server. Try again.</div>';
+  } finally {
+    renderBanner();
+  }
+}
+
+// --- Tabs ---
+function showTab(name) {
+  $('tab-rank').style.display = name === 'rank' ? '' : 'none';
+  $('tab-admin').style.display = name === 'admin' ? '' : 'none';
+  $('tabRankBtn').classList.toggle('active', name === 'rank');
+  $('tabAdminBtn').classList.toggle('active', name === 'admin');
+  if (name === 'admin' && adminPw) loadAdmin();
+}
+
+// --- Poll Admin ---
+async function unlockAdmin() {
+  const pw = $('adminPw').value;
+  if (!pw) return;
+  $('adminErr').innerHTML = '';
+  try {
+    const res = await fetch('/api/admin', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw, action: 'verify' }),
+    });
+    const d = await res.json();
+    if (!res.ok) { $('adminErr').innerHTML = '<div class="banner err">' + esc(d.error || 'Wrong password.') + '</div>'; return; }
+    adminPw = pw;
+    $('adminLock').style.display = 'none';
+    $('adminBody').style.display = '';
+    loadAdmin();
+  } catch (e) {
+    $('adminErr').innerHTML = '<div class="banner err">Could not reach the server.</div>';
+  }
+}
+function lockAdmin() {
+  adminPw = null; adminData = null;
+  $('adminPw').value = '';
+  $('adminBody').style.display = 'none';
+  $('adminLock').style.display = '';
+}
+async function adminCall(action, extra) {
+  const res = await fetch('/api/admin', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ password: adminPw, action }, extra || {})),
+  });
+  const d = await res.json();
+  if (!res.ok) throw new Error(d.error || 'Admin action failed.');
+  return d;
+}
+async function loadAdmin() {
+  if (!adminPw) return;
+  try {
+    const res = await fetch('/api/composite', { headers: { 'x-admin-password': adminPw } });
+    const d = await res.json();
+    if (!res.ok) { lockAdmin(); $('adminErr').innerHTML = '<div class="banner err">' + esc(d.error || 'Locked.') + '</div>'; return; }
+    adminData = d;
+    $('pollStateText').textContent = d.open ? 'Poll is OPEN — voters can submit.' : 'Poll is CLOSED — submissions are blocked.';
+    $('openCloseBtn').textContent = d.open ? 'Close the poll' : 'Open the poll';
+    renderChecklist();
+    renderCompositeList();
+    renderPosterPreview();
+  } catch (e) { /* server unreachable */ }
+}
+function renderChecklist() {
+  const subs = adminData.submissions || [];
+  if (!subs.length) { $('checklist').innerHTML = '<p class="help">No submissions yet.</p>'; return; }
+  $('checklist').innerHTML = '<table><tr><th>Include</th><th>Handle</th><th>Updated</th><th>#1 pick</th><th></th></tr>' +
+    subs.map((s) => '<tr><td><input type="checkbox" ' + (s.included ? 'checked' : '') +
+      ' onchange="toggleInclude(\'' + esc(s.handle) + '\', this.checked)"></td>' +
+      '<td><b>@' + esc(s.handle) + '</b></td>' +
+      '<td>' + esc((s.updatedAt || '').slice(0, 10)) + '</td>' +
+      '<td>' + esc(s.firstPick || '—') + '</td>' +
+      '<td><button class="ghost" style="padding:6px 10px;font-size:13px" onclick="removeSubmission(\'' + esc(s.handle) + '\')">Remove</button></td></tr>').join('') + '</table>';
+}
+function renderCompositeList() {
+  const rows = adminData.composite || [];
+  if (!adminData.ballotCount) { $('compositeList').innerHTML = '<p class="help">No checked-in ballots yet — check accounts in on the checklist above.</p>'; return; }
+  $('compositeList').innerHTML = '<table><tr><th>#</th><th>Team</th><th>Points</th><th>(N) 1st</th><th>Avg rank</th></tr>' +
+    rows.map((r, i) => '<tr><td><b>' + (i + 1) + '</b></td><td>' + esc(r.name) + '</td><td><b>' + r.points + ' PTS</b></td><td>(' + r.firstPlace + ')</td><td>' + (r.avgRank == null ? '—' : r.avgRank.toFixed(2)) + '</td></tr>').join('') +
+    '</table><p class="help">Composite of ' + adminData.ballotCount + ' ballot' + (adminData.ballotCount === 1 ? '' : 's') + '.</p>';
+}
+async function toggleOpen() {
+  try { await adminCall('setOpen', { open: !adminData.open }); loadAdmin(); refreshPollState(); }
+  catch (e) { alert(e.message); }
+}
+async function toggleInclude(handle, included) {
+  try { await adminCall('setIncluded', { handle, included }); loadAdmin(); }
+  catch (e) { alert(e.message); loadAdmin(); }
+}
+async function removeSubmission(handle) {
+  if (!confirm('Remove @' + handle + '\'s ranking? Their handle will be free to submit again.')) return;
+  try { await adminCall('remove', { handle }); loadAdmin(); }
+  catch (e) { alert(e.message); }
+}
+async function clearAll() {
+  if (!confirm('Clear ALL rankings? This wipes every ballot. This cannot be undone.')) return;
+  if (!confirm('Are you sure? All submitted rankings will be deleted.')) return;
+  try { await adminCall('clearAll', { confirm: true }); loadAdmin(); }
+  catch (e) { alert(e.message); }
+}
+
+// --- Poster (composite only, admin only) ---
+function posterRows() {
+  return (adminData && adminData.composite) || [];
+}
+function renderPosterPreview() {
+  const rows = posterRows();
+  const el = $('posterPreview');
+  if (!rows.length || !adminData.ballotCount) {
+    el.innerHTML = '<div class="ph"><div class="ttl"><small>THE BIG EAST CONFERENCE</small>POWER RANKINGS</div><span class="pill">COMPOSITE POLL</span></div>' +
+      '<p style="color:#c8d6e2">No checked-in ballots yet — check accounts in on the checklist above.</p>';
+    return;
+  }
+  const half = Math.ceil(rows.length / 2);
+  const col = (list) => list.map((r, k) => {
+    const t = byId(r.teamId);
+    const rank = rows.indexOf(r) + 1;
+    return '<div class="prow' + (rank === 1 ? ' first' : '') + '">' +
+      '<span class="pr">' + (rank === 1 ? '&#9733;' : '') + rank + '</span>' +
+      logoHtml(t, 'plogo') +
+      // (N) is its own non-truncating element, never inside the truncated name.
+      '<span class="pname"><span class="nm">' + esc(t.short) + '</span><span class="fp">(' + r.firstPlace + ')</span></span>' +
+      '<span class="ppts">' + r.points + ' PTS<small>' + record(t) + '</small></span>' +
+      '</div>';
+  }).join('');
+  el.innerHTML =
+    '<div class="ph"><div class="ttl"><small>THE BIG EAST CONFERENCE</small>POWER RANKINGS</div><div style="text-align:right"><div style="font-size:11px;letter-spacing:2px;color:#d4af37">2026-27 SEASON</div><span class="pill">COMPOSITE POLL</span></div></div>' +
+    '<div class="cols"><div>' + col(rows.slice(0, half)) + '</div><div>' + col(rows.slice(half)) + '</div></div>' +
+    '<div class="pf">Composite of ' + adminData.ballotCount + ' ballot' + (adminData.ballotCount === 1 ? '' : 's') +
+    ' &middot; 11 pts for a 1st-place vote, down to 1 for 11th &middot; Source: ESPN</div>';
+}
+
+function loadLogoImage(t) {
+  if (logoCache[t.id]) return Promise.resolve(logoCache[t.id]);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { logoCache[t.id] = img; resolve(img); };
+    img.onerror = () => { logoCache[t.id] = 'fail'; resolve('fail'); };
+    img.src = t.logo;
+  });
+}
+async function drawPoster(canvas) {
+  const rows = posterRows();
+  const ctx = canvas.getContext('2d');
+  const W = 1600, H = 900;
+  canvas.width = W; canvas.height = H;
+  // Navy gradient + pinstripes
+  const g = ctx.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#04101f'); g.addColorStop(.45, '#0a2a4d'); g.addColorStop(1, '#061a33');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalAlpha = .05; ctx.strokeStyle = '#ffffff';
+  for (let x = -H; x < W; x += 46) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke(); }
+  ctx.restore();
+  // Gold frame
+  ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 6; ctx.strokeRect(14, 14, W - 28, H - 28);
+  ctx.lineWidth = 2; ctx.strokeRect(28, 28, W - 56, H - 56);
+  // Header
+  ctx.fillStyle = '#d4af37'; ctx.font = '700 26px Archivo, sans-serif'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('T H E   B I G   E A S T   C O N F E R E N C E', 70, 92);
+  ctx.fillStyle = '#ffffff'; ctx.font = '52px Graduate, Georgia, serif';
+  ctx.fillText('POWER RANKINGS', 70, 152);
+  ctx.fillStyle = '#d4af37'; ctx.font = '700 24px Archivo, sans-serif';
+  ctx.fillText('2026-27 SEASON', 1180, 92);
+  // COMPOSITE POLL pill
+  ctx.fillStyle = '#c2102b'; ctx.beginPath();
+  ctx.roundRect(1150, 108, 380, 52, 26); ctx.fill();
+  ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.font = '800 26px Archivo, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('COMPOSITE POLL', 1340, 144); ctx.textAlign = 'left';
+  // Rows: two columns
+  const rowsTop = 190, rowH = 96, rowGap = 12, colW = 700, colX = [70, 830];
+  const half = Math.ceil(rows.length / 2);
+  for (let col = 0; col < 2; col++) {
+    const list = rows.slice(col * half, (col + 1) * half);
+    for (let k = 0; k < list.length; k++) {
+      const r = list[k];
+      const rank = col * half + k + 1;
+      const t = byId(r.teamId);
+      const y = rowsTop + k * (rowH + rowGap);
+      const x = colX[col];
+      // Row background
+      ctx.fillStyle = rank === 1 ? 'rgba(212,175,55,.28)' : 'rgba(255,255,255,.08)';
+      ctx.beginPath(); ctx.roundRect(x, y, colW, rowH, 14); ctx.fill();
+      ctx.strokeStyle = rank === 1 ? '#d4af37' : 'rgba(255,255,255,.25)'; ctx.lineWidth = rank === 1 ? 3 : 1.5; ctx.stroke();
+      // Rank
+      ctx.fillStyle = rank === 1 ? '#d4af37' : '#9fc6e8';
+      ctx.font = '800 34px Archivo, sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText((rank === 1 ? '★ ' : '') + rank, x + 42, y + 60); ctx.textAlign = 'left';
+      // Logo badge (white circle)
+      const cx = x + 122, cy = y + rowH / 2;
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 34, 0, Math.PI * 2); ctx.fill();
+      const img = await loadLogoImage(t);
+      if (img !== 'fail') {
+        const s = 56, iw = img.width, ih = img.height, sc = Math.min(s / iw, s / ih);
+        ctx.drawImage(img, cx - iw * sc / 2, cy - ih * sc / 2, iw * sc, ih * sc);
+      } else {
+        ctx.fillStyle = '#0072BC'; ctx.font = '800 24px Archivo, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(t.initials, cx, cy + 8); ctx.textAlign = 'left';
+      }
+      // Name + (N): reserve the (N) width FIRST, then fit the name to what remains.
+      const nameX = x + 172;
+      const ptsText = r.points + ' PTS';
+      const fpText = '(' + r.firstPlace + ')';
+      ctx.font = '800 26px Archivo, sans-serif';
+      const fpW = ctx.measureText(fpText).width;
+      const ptsW = ctx.measureText(ptsText).width;
+      const recW = 92;
+      const nameMax = colW - (nameX - x) - fpW - 16 - Math.max(ptsW, recW) - 24;
+      let name = t.short;
+      while (name.length > 1 && ctx.measureText(name + '…').width > nameMax) name = name.slice(0, -1);
+      if (name !== t.short) name += '…';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(name, nameX, y + 44);
+      ctx.fillStyle = '#d4af37';
+      ctx.fillText(fpText, nameX + ctx.measureText(name).width + 10, y + 44);
+      // Points + record, right side
+      ctx.fillStyle = '#d4af37'; ctx.font = '800 26px Archivo, sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText(ptsText, x + colW - 18, y + 44);
+      ctx.fillStyle = '#fff'; ctx.font = '700 22px Archivo, sans-serif';
+      ctx.fillText(record(t), x + colW - 18, y + 76);
+      ctx.textAlign = 'left';
+    }
+  }
+  // Footer
+  ctx.fillStyle = '#d4af37'; ctx.font = '700 22px Archivo, sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Composite of ' + adminData.ballotCount + ' ballot' + (adminData.ballotCount === 1 ? '' : 's') +
+    '  ·  11 pts for a 1st-place vote, down to 1 for 11th  ·  Source: ESPN', W / 2, H - 52);
+  ctx.textAlign = 'left';
+}
+async function downloadPoster() {
+  if (!adminData || !adminData.ballotCount) { alert('No checked-in ballots yet.'); return; }
+  try { if (document.fonts) await document.fonts.ready; } catch (e) {}
+  const canvas = document.createElement('canvas');
+  await drawPoster(canvas);
+  const a = document.createElement('a');
+  a.download = 'big-east-composite-rankings.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+loadTeams();
+</script>
+</body>
+</html>
