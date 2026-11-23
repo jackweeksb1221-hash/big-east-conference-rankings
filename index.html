@@ -41,9 +41,9 @@ input:focus{outline:2px solid var(--blue);border-color:var(--blue)}
 .banner.final{background:#e6f4ea;color:#14532d;border:1px solid #a7d7b5}
 .banner.err{background:#fde8ea;color:#8f1226}
 .banner.ok{background:#e6f4ea;color:#14532d}
-.teamrow{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px;touch-action:none;user-select:none;-webkit-user-select:none}
+.teamrow{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;position:relative;will-change:transform;transition:transform .12s ease}
 .teamrow.locked{opacity:.75}
-.teamrow.dragging{box-shadow:0 10px 24px rgba(0,0,0,.28);border-color:var(--blue);z-index:5;position:relative}
+.teamrow.dragging{box-shadow:0 10px 24px rgba(0,0,0,.28);border-color:var(--blue);z-index:10;transition:none}
 .grip{flex:0 0 auto;width:34px;height:100%;min-height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#9db0bf;cursor:grab;touch-action:none;border-radius:8px;background:#f2f6f9}
 .grip:active{cursor:grabbing;background:#dbe9f3}
 .ranknum{flex:0 0 22px;text-align:center;font-family:"Archivo Black",sans-serif;font-size:18px;color:var(--blue)}
@@ -246,6 +246,18 @@ function resetOrder() {
 // --- Pointer drag: card follows the finger, siblings slide, order commits on release.
 // Listeners live on window (not on the row), so re-rendering mid-drag cannot
 // drop the gesture — that was the original drag bug.
+// CRITICAL: the list is NEVER re-rendered mid-drag. The old code called
+// renderList() whenever the target slot changed, which moved the dragged row
+// to its new slot in the layout AND re-applied translateY(dy) on top of it —
+// double displacement of ~one card-height, so on iPhone the bar sat way below
+// the finger. Re-rendering also destroyed/recreated the logo <img> elements,
+// which is why the logo circles went blank during a drag. Now the DOM order
+// stays frozen until release: the dragged row is moved only by translateY(dy)
+// (so the exact point grabbed stays under the finger), siblings are shifted
+// only by transform, and the order array is spliced once in onDragEnd.
+// Row positions are captured in document coordinates (rect.top + scrollY)
+// at drag start, so page scroll / Safari viewport shifts cannot offset the
+// pointer math; the pointer's document Y is compared against those midpoints.
 let drag = null;
 function attachDrag() {
   document.querySelectorAll('[data-grip]').forEach((grip) => {
@@ -254,7 +266,22 @@ function attachDrag() {
       e.preventDefault();
       const id = grip.getAttribute('data-grip');
       const row = grip.closest('.teamrow');
-      drag = { id, startY: e.clientY, lastY: e.clientY, rowH: row.offsetHeight };
+      const list = $('teamList');
+      const rows = [...list.querySelectorAll('.teamrow')];
+      const scrollY = window.scrollY;
+      // Document-space top of every row at drag start (layout coords, so
+      // sibling transforms and any scroll shift cannot move them).
+      const tops = rows.map((r) => r.getBoundingClientRect().top + scrollY);
+      drag = {
+        id,
+        startY: e.clientY,
+        startIndex: order.indexOf(id),
+        target: order.indexOf(id),
+        rowH: row.offsetHeight,
+        gap: 8, // matches .teamrow margin-bottom
+        tops,
+        scrollY,
+      };
       row.classList.add('dragging');
       window.addEventListener('pointermove', onDragMove, { passive: false });
       window.addEventListener('pointerup', onDragEnd, { once: true });
@@ -265,35 +292,46 @@ function attachDrag() {
 function onDragMove(e) {
   if (!drag) return;
   e.preventDefault();
-  drag.lastY = e.clientY;
   const dy = e.clientY - drag.startY;
-  const rowEl = document.querySelector('.teamrow[data-id="' + drag.id + '"]');
-  if (rowEl) rowEl.style.transform = 'translateY(' + dy + 'px)';
-  // Work out the target slot from the pointer position over the list.
   const list = $('teamList');
-  const rows = [...list.querySelectorAll('.teamrow')].filter((r) => r.getAttribute('data-id') !== drag.id);
-  let target = order.indexOf(drag.id);
-  const rect = list.getBoundingClientRect();
-  const y = e.clientY - rect.top;
-  let acc = 0;
-  for (let k = 0; k < rows.length; k++) {
-    acc += rows[k].offsetHeight + 8;
-    if (y < acc - rows[k].offsetHeight / 2) { target = k; break; }
-    target = k + 1;
+  const rowEl = list.querySelector('.teamrow[data-id="' + drag.id + '"]');
+  if (rowEl) rowEl.style.transform = 'translateY(' + dy + 'px)';
+  // Target slot from the pointer's document Y vs the captured row midpoints.
+  // (Pointer Y in document coords = clientY + current scrollY; the captured
+  // tops are in the same space, so scrolling mid-drag cannot skew the math.)
+  const pointerDocY = e.clientY + window.scrollY;
+  const others = order.filter((oid) => oid !== drag.id);
+  let target = 0;
+  for (let k = 0; k < others.length; k++) {
+    const otherIdx = order.indexOf(others[k]);
+    const mid = drag.tops[otherIdx] + drag.rowH / 2;
+    if (pointerDocY > mid) target = k + 1; else break;
   }
-  const cur = order.indexOf(drag.id);
-  if (target !== cur && target >= 0 && target < order.length) {
-    order.splice(cur, 1);
-    order.splice(target, 0, drag.id);
-    renderList();
-    const el = document.querySelector('.teamrow[data-id="' + drag.id + '"]');
-    if (el) { el.classList.add('dragging'); el.style.transform = 'translateY(' + dy + 'px)'; }
-  }
+  drag.target = target;
+  // Visually slide the siblings out of the way (transform only — no DOM moves,
+  // so the logo <img> elements stay loaded and the dragged row is not displaced twice).
+  const shift = drag.rowH + drag.gap;
+  list.querySelectorAll('.teamrow').forEach((r) => {
+    const rid = r.getAttribute('data-id');
+    if (rid === drag.id) return;
+    const idx = order.indexOf(rid);
+    let s = 0;
+    if (drag.target > drag.startIndex && idx > drag.startIndex && idx <= drag.target) s = -shift;
+    else if (drag.target < drag.startIndex && idx >= drag.target && idx < drag.startIndex) s = shift;
+    r.style.transform = s ? 'translateY(' + s + 'px)' : '';
+  });
 }
 function onDragEnd() {
   window.removeEventListener('pointermove', onDragMove);
+  if (drag) {
+    const cur = order.indexOf(drag.id);
+    if (drag.target !== cur && drag.target >= 0 && drag.target <= order.length - 1) {
+      order.splice(cur, 1);
+      order.splice(drag.target, 0, drag.id);
+    }
+  }
   drag = null;
-  renderList();
+  renderList(); // single re-render, on release only — clears all transforms
 }
 
 // --- Handle / submit ---
