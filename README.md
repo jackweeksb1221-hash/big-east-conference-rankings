@@ -37,8 +37,11 @@ ballots, remove/clear, and a composite-only poster graphic (1600×900 PNG) for X
 - Blob store: `big-east-rankings-ballots`, private access.
 - `meta.json` — `{ open: true, excluded: ["handle", ...] }` (poll open/closed + include/exclude flags).
 - `submissions/<handle>.json` — one JSON per submission: `{ handle, order: [11 team ids], updatedAt }`.
-- The Blob store's read/write token must be set as the project's
-  `BLOB_READ_WRITE_TOKEN` environment variable (Production).
+- Connected Blob stores authenticate via OIDC — Vercel does **not** set a
+  `BLOB_READ_WRITE_TOKEN` for them, and the code must not require one. Do not
+  add that variable manually; if the store is connected, the SDK authenticates
+  on its own. (A `BLOB_READ_WRITE_TOKEN` is only needed for local development
+  outside Vercel.)
 - The admin password is **never** in the repo. It comes from the `ADMIN_PASSWORD`
   environment variable, checked server-side on every admin/composite request.
   If it is not set, admin endpoints return 503.
@@ -79,10 +82,10 @@ ballots, remove/clear, and a composite-only poster graphic (1600×900 PNG) for X
 3. **Database — Blob store**
    - In the Vercel dashboard, go to **Storage → Create Store → Blob**.
    - Name: `big-east-rankings-ballots`, private access.
-   - Connect it to the `big-east-rankings` project — that sets
-     `BLOB_READ_WRITE_TOKEN` for you.
-   - If voting fails afterwards, check **Project → Settings → Environment
-     Variables** for `BLOB_READ_WRITE_TOKEN` (Production) and redeploy.
+   - Connect it to the `big-east-rankings` project. Connected stores
+     authenticate via OIDC — no token variable is needed or set.
+   - If voting fails afterwards, make sure the store shows as Connected in
+     **Project → Settings → Storage**, then redeploy.
 
 4. **Admin password**
    - **Project → Settings → Environment Variables**, add `ADMIN_PASSWORD`

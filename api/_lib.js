@@ -5,8 +5,13 @@
 // Blob layout (Vercel Blob store "big-east-rankings-ballots", private):
 //   meta.json                  { open: true, excluded: ["handle", ...] }
 //   submissions/<handle>.json  { handle, order: [teamId x11], updatedAt }
-// No secrets are ever stored in the repo. ADMIN_PASSWORD and
-// BLOB_READ_WRITE_TOKEN are Vercel environment variables.
+// No secrets are ever stored in the repo. ADMIN_PASSWORD is the only
+// required environment variable. Blob auth: connected Vercel Blob stores
+// now authenticate via OIDC — Vercel does NOT add a
+// BLOB_READ_WRITE_TOKEN env var for a connected store, so the code must
+// not require one. The @vercel/blob SDK authenticates automatically
+// inside a Vercel function: via BLOB_READ_WRITE_TOKEN when it is set,
+// and via OIDC otherwise.
 'use strict';
 
 const fs = require('fs');
@@ -152,9 +157,11 @@ function realBlobImpl() {
 
 function store() {
   if (blobImpl) return blobImpl;
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    throw Object.assign(new Error('BLOB_READ_WRITE_TOKEN is not configured on the server.'), { status: 503 });
-  }
+  // No BLOB_READ_WRITE_TOKEN check here on purpose: connected Blob stores
+  // authenticate via OIDC, and Vercel does not set that env var for them.
+  // The @vercel/blob SDK authenticates automatically (env token when
+  // present, OIDC otherwise); if auth actually fails the SDK call throws
+  // and the API handler turns it into a 500.
   blobImpl = realBlobImpl();
   return blobImpl;
 }
