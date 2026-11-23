@@ -85,12 +85,12 @@ input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
 <body>
 <header>
   <div class="wordmark">
-    <div class="be-badge"><span>THE</span><b>BIG EAST</b><span>CONFERENCE</span></div>
+    <!-- Hidden admin entry (Jack only): tap this Big East logo 5 times within 2 seconds to open Poll Admin. No visible admin button anywhere. -->
+    <div class="be-badge" id="headerLogo" onclick="onLogoTap()"><span>THE</span><b>BIG EAST</b><span>CONFERENCE</span></div>
     <div><h1>BIG EAST POWER RANKINGS</h1><p>Rank all 11 &middot; 2026-27 season</p></div>
   </div>
   <nav>
     <button class="tabbtn active" id="tabRankBtn" onclick="showTab('rank')">Rank &amp; Submit</button>
-    <button class="tabbtn" id="tabAdminBtn" onclick="showTab('admin')">Poll Admin</button>
   </nav>
 </header>
 <main>
@@ -388,11 +388,26 @@ async function submitRanking() {
 }
 
 // --- Tabs ---
+// Hidden admin entry — Jack only: tap the Big East logo in the header
+// 5 times within 2 seconds to open the Poll Admin password screen.
+// There is no visible admin button/tab anywhere in the app.
+let logoTaps = [];
+function onLogoTap() {
+  const now = Date.now();
+  logoTaps = logoTaps.filter((t) => now - t < 2000);
+  logoTaps.push(now);
+  if (logoTaps.length >= 5) {
+    logoTaps = [];
+    showTab('admin');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
 function showTab(name) {
   $('tab-rank').style.display = name === 'rank' ? '' : 'none';
   $('tab-admin').style.display = name === 'admin' ? '' : 'none';
   $('tabRankBtn').classList.toggle('active', name === 'rank');
-  $('tabAdminBtn').classList.toggle('active', name === 'admin');
+  const adminBtn = $('tabAdminBtn');
+  if (adminBtn) adminBtn.classList.toggle('active', name === 'admin');
   if (name === 'admin' && adminPw) loadAdmin();
 }
 
