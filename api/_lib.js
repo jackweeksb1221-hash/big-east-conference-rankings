@@ -6,15 +6,15 @@
 //   meta.json                  { open: true, excluded: ["handle", ...] }
 //   submissions/<handle>.json  { handle, order: [teamId x11], updatedAt }
 // No secrets are ever stored in the repo. ADMIN_PASSWORD is the only
-// required environment variable. Blob auth: when BLOB_STORE_ID is set
-// (Vercel sets it for a connected store) the @vercel/blob SDK prefers
-// OIDC, so realBlobImpl() passes BLOB_READ_WRITE_TOKEN EXPLICITLY (via
-// the `token` option) to every SDK call. And put() must use
-// access: 'public' — every @vercel/blob version (0.x and 1.x) throws
-// `access must be "public"` for 'private' before any network call;
-// the real privacy comes from the STORE (big-east-rankings-ballots is
-// private), so blobs stay private. When no token is set the SDK falls
-// back to its default (OIDC), so reads keep working.
+// required environment variable. Blob auth: @vercel/blob v2 supports
+// private stores — put/get use access: 'private', which must match the
+// store (big-east-rankings-ballots is private). v2 prefers OIDC when
+// BLOB_STORE_ID is set (Vercel sets it for a connected store) and the
+// explicit token is ignored then; the token is still passed so local
+// development outside Vercel works. Do NOT downgrade to @vercel/blob
+// 1.x: its put() throws `access must be "public"` for private access
+// before any network call, and public access is rejected by the API on
+// a private store — v1 simply cannot write to a private store.
 'use strict';
 
 const fs = require('fs');
@@ -124,26 +124,22 @@ function setBlobImpl(impl) { blobImpl = impl; }
 function realBlobImpl() {
   // Lazy require so unit tests never need @vercel/blob installed.
   const blob = require('@vercel/blob');
-  // Pass the read-write token EXPLICITLY to every SDK call. The SDK
-  // prefers OIDC when BLOB_STORE_ID is set; the explicit token wins.
-  // NOTE: @vercel/blob's put() requires access: 'public' — the option is
-  // a client-side validation, and the real privacy comes from the STORE
-  // (big-east-rankings-ballots is private), so blobs stay private.
-  // access: 'private' throws `Vercel Blob: access must be "public"`
-  // before any network call, in every SDK version. Undefined when unset,
-  // so the SDK falls back to OIDC.
+  // @vercel/blob v2: access must match the store (private here). The
+  // token is passed explicitly so non-Vercel runs work; on Vercel the
+  // SDK prefers OIDC when BLOB_STORE_ID is set, which also works for
+  // private writes in v2. allowOverwrite: meta.json is rewritten on
+  // every admin change, and put() rejects an existing pathname by
+  // default.
   const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
   return {
     async put(p, text) {
-      await blob.put(p, text, { access: 'public', addRandomSuffix: false, token });
+      await blob.put(p, text, { access: 'private', addRandomSuffix: false, allowOverwrite: true, token });
     },
     async get(p) {
       try {
-        const head = await blob.head(p, { token });
-        const url = head.downloadUrl || head.url;
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        return await res.text();
+        const r = await blob.get(p, { access: 'private', useCache: false, token });
+        if (!r || !r.stream) return null;
+        return await new Response(r.stream).text();
       } catch (e) {
         return null;
       }
@@ -160,8 +156,7 @@ function realBlobImpl() {
     },
     async del(p) {
       try {
-        const head = await blob.head(p, { token });
-        await blob.del(head.url, { token });
+        await blob.del(p, { token });
       } catch (e) { /* already gone */ }
     },
   };

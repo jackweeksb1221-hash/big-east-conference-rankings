@@ -37,13 +37,16 @@ ballots, remove/clear, and a composite-only poster graphic (1600×900 PNG) for X
 - Blob store: `big-east-rankings-ballots`, private access.
 - `meta.json` — `{ open: true, excluded: ["handle", ...] }` (poll open/closed + include/exclude flags).
 - `submissions/<handle>.json` — one JSON per submission: `{ handle, order: [11 team ids], updatedAt }`.
-- Connected Blob stores authenticate via OIDC, but OIDC tokens only allow
-  public access — private writes (`access: "private"`) fail with
-  `access must be "public"`. So `BLOB_READ_WRITE_TOKEN` **must** be set
-  (Production) from the store's Quickstart → `.env.local` tab; the code
-  passes it explicitly to every SDK call so it wins over OIDC. Without
-  it, reads work but every write (submits, open/close, remove, clear)
-  fails. Redeploy after adding it.
+- The app uses `@vercel/blob` **v2** (`^2.9.0` in package.json) — v2 is
+  required for private stores: its `put`/`get` accept `access: "private"`,
+  which must match the store. v1's `put()` rejects private access with
+  `access must be "public"` before any network call, and public access
+  is rejected by the API on a private store, so v1 cannot write to a
+  private store at all. On Vercel the SDK authenticates via OIDC for
+  the connected store (v2 supports private writes over OIDC); the
+  `BLOB_READ_WRITE_TOKEN` env var (Production, from the store's
+  Quickstart → `.env.local` tab) is still set as a fallback for runs
+  outside Vercel. Redeploy after adding it.
 - The admin password is **never** in the repo. It comes from the `ADMIN_PASSWORD`
   environment variable, checked server-side on every admin/composite request.
   If it is not set, admin endpoints return 503.
@@ -87,8 +90,8 @@ ballots, remove/clear, and a composite-only poster graphic (1600×900 PNG) for X
    - Connect it to the `big-east-rankings` project. Then set the token:
      on the store page, Quickstart → `.env.local` tab, copy the
      `BLOB_READ_WRITE_TOKEN` value and add it as a project env var
-     (Production). OIDC alone only allows public access, so private
-     writes fail without this token. Redeploy after adding it.
+     (Production) as a fallback. On Vercel the v2 SDK authenticates via
+     OIDC for the connected store. Redeploy after adding it.
    - If voting fails afterwards, make sure the store shows as Connected in
      **Project → Settings → Storage** and `BLOB_READ_WRITE_TOKEN` is set
      for Production, then redeploy.
